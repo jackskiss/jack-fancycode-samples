@@ -1,0 +1,2 @@
+export SOURCE_PATH=/home/jack/project
+echo "Define global variable" 
