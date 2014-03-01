@@ -1,0 +1,3 @@
+To build, use this command 
+
+gcc -Wall helloworld.c -o helloworld $(pkg-config --cflags --libs gtk+-3.0)
