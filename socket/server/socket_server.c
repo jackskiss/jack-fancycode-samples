@@ -10,7 +10,6 @@
 #include <time.h> 
 #include <sys/un.h>
 
-
 #define ENABLE_UNIX_DOMAIN_SOCKET
 
 #ifdef ENABLE_UNIX_DOMAIN_SOCKET
@@ -29,6 +28,10 @@ int main(int argc, char *argv[])
     time_t ticks;
 
 #ifdef ENABLE_UNIX_DOMAIN_SOCKET
+
+    if ( access(file_server, F_OK) == 0 )
+        unlink( file_server );
+
     listenfd = socket(PF_FILE, SOCK_STREAM, 0);
 #else
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -40,7 +43,7 @@ int main(int argc, char *argv[])
 #ifndef ENABLE_UNIX_DOMAIN_SOCKET        
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 #endif
-    
+
 #ifdef ENABLE_UNIX_DOMAIN_SOCKET
     serv_addr.sun_family = AF_UNIX;
     strcpy(serv_addr.sun_path, file_server);
@@ -51,7 +54,7 @@ int main(int argc, char *argv[])
 
     bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
 
-    listen(listenfd, 10); 
+    listen(listenfd, 5); 
 
     while(1)
     {
