@@ -10,22 +10,36 @@
 #include <time.h> 
 #include <sys/un.h>
 
+#define BOOL    char
+#define true    1
+#define false   0
+
 #define ENABLE_UNIX_DOMAIN_SOCKET
 
 #ifdef ENABLE_UNIX_DOMAIN_SOCKET
 const char * file_server = "/tmp/udstest";
 #endif
 
+static void * readloop(void * data);
+
+static    int listenfd = 0, connfd = 0, n = 0;
+#ifdef ENABLE_UNIX_DOMAIN_SOCKET    
+static    struct sockaddr_un serv_addr; 
+#else
+static    struct sockaddr_in serv_addr; 
+#endif
+
+static    char sendBuff[1025];
+static    char recvBuff[1025];
+static    time_t ticks;
+
+static    pthread_t readThreadId;
+
+static    BOOL running; 
+
 int main(int argc, char *argv[])
 {
-    int listenfd = 0, connfd = 0;
-#ifdef ENABLE_UNIX_DOMAIN_SOCKET    
-    struct sockaddr_un serv_addr; 
-#else
-    struct sockaddr_in serv_addr; 
-#endif
-    char sendBuff[1025];
-    time_t ticks;
+
 
 #ifdef ENABLE_UNIX_DOMAIN_SOCKET
 
@@ -55,20 +69,46 @@ int main(int argc, char *argv[])
     bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
 
     listen(listenfd, 5); 
+    
+    connfd = accept(listenfd, (struct sockaddr*)NULL, NULL); 
+
+    pthread_create(&readThreadId, 0, readloop, 0);
 
     while(1)
     {
-        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL); 
+        fgets(sendBuff, sizeof(sendBuff), stdin);
 
-        read(connfd, sendBuff, sizeof(sendBuff));
+        write(connfd, sendBuff, strlen(sendBuff)+1);
+
+        sleep(1);
+
+    }
+
+    running = false;
+
+    close(connfd);
+}
+
+static void * readloop(void * data)
+{
+    running = true;
+
+    while(running)
+    {
+        n = read(connfd, recvBuff, sizeof(sendBuff));
         
-        printf("%s\n", sendBuff);
+        if(n > 0)
+            printf("%s\n", recvBuff);
 
-        ticks = time(NULL);
+/*        ticks = time(NULL);
         snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
         write(connfd, sendBuff, strlen(sendBuff)); 
+*/
+             
+        sleep(1);     
+        
+    }
 
-        close(connfd);
-        sleep(1);
-     }
+    pthread_exit(NULL);
 }
+

@@ -10,6 +10,10 @@
 #include <arpa/inet.h> 
 #include <sys/un.h>
 
+#define BOOL    char
+#define true    1
+#define false   0
+
 #define ENABLE_UNIX_DOMAIN_SOCKET
 
 #ifdef ENABLE_UNIX_DOMAIN_SOCKET
@@ -17,15 +21,24 @@ const char * file_server = "/tmp/udstest";
 #endif
 
 
+static    int sockfd = 0, n = 0;
+static    char recvBuff[1024];
+static    char sendBuff[1024];
+#ifdef ENABLE_UNIX_DOMAIN_SOCKET    
+static    struct sockaddr_un serv_addr; 
+#else
+static    struct sockaddr_in serv_addr; 
+#endif
+
+static pthread_t readLoopId;
+
+static BOOL running; 
+
+static void * readloop(void * data);
+
 int main(int argc, char *argv[])
 {
-    int sockfd = 0, n = 0;
-    char recvBuff[1024];
-#ifdef ENABLE_UNIX_DOMAIN_SOCKET    
-    struct sockaddr_un serv_addr; 
-#else
-    struct sockaddr_in serv_addr; 
-#endif
+
     if(argc != 2)
     {
         printf("\n Usage: %s <ip of server> \n",argv[0]);
@@ -67,21 +80,36 @@ int main(int argc, char *argv[])
        return 1;
     } 
 
+    pthread_create(&readLoopId, 0, readloop, 0);
+
     write(sockfd, "Hello Server", 13);
 
-    while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
+    while (1)
     {
-        recvBuff[n] = 0;
-        if(fputs(recvBuff, stdout) == EOF)
-        {
-            printf("\n Error : Fputs error\n");
-        }
+        fgets(sendBuff, sizeof(sendBuff), stdin);
+        write(sockfd, sendBuff, strlen(sendBuff)+1);
+        sleep(1);
     } 
 
-    if(n < 0)
-    {
-        printf("\n Read error \n");
-    } 
+    running = false;
 
     return 0;
+}
+
+
+static void * readloop(void * data)
+{
+    running = true;
+
+    while(running)
+    {
+        n = read(sockfd, recvBuff, sizeof(recvBuff)-1);
+        
+        if(n > 0)
+             printf("%s\n", recvBuff);
+   
+        sleep(1);
+    }
+
+    pthread_exit(NULL);
 }
