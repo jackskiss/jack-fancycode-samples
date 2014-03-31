@@ -100,6 +100,8 @@ static void * readloop(void * data)
         if(n > 0)
             printf("%s\n", recvBuff);
 
+        printf("LENGTH %d\n", n);
+
 /*        ticks = time(NULL);
         snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
         write(connfd, sendBuff, strlen(sendBuff)); 

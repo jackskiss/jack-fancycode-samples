@@ -107,6 +107,8 @@ static void * readloop(void * data)
         
         if(n > 0)
              printf("%s\n", recvBuff);
+        
+        printf("LENGTH %d\n", n);
    
         sleep(1);
     }
