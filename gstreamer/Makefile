@@ -1,33 +1,19 @@
-# MAKEFILE
+# Master Makefile
 
-# Written By Jack
+DIR = src
+OBJECTS = src.o
+TARGET = sample
 
-# Compile 
-CC = gcc
-SRC = $(wildcard *.c)
-OBJECTS = $(SRC:.c=.o)
-FLAGS = 
-CFLSGS = -Wall
-LIBS =
-DIRS = .  
-INCLUDES =
+all : objs
+	
+objs : 
+	@for dir in $(DIR); do \
+	make -C $$ dir
+	done
 
-TARGET = gsample
+# using vpath
+# TOPDIR = c:/project
+# vpath %.c $(TOPDIR)
+# vpath %.h $(TOPDIR)
 
-EXECUTEBIN = $(TARGET).bin
-TARGETELF = $(TARGET).elf
 
-# Tool Option
-BINTOOL = fromelf
-
-# Build
-$(TARGET) : $(TARGETELF)
-$(BINTOOL) -bin -o $@ @^
-
-$(TARGETELF) : $(OBJECTS)
-$(CC) -o $@ $^
-
-# Clean
-.PHOHY : clean
-	@rm *.o
-	@gsample
