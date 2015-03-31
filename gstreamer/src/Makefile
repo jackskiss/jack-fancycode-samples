@@ -11,13 +11,14 @@ CFLAGS = -Wall
 #CFLAGS=--sysroot=/
 LD = ld
 LFLAGS = --entry main
+#LFLAGS =
 DIRS=.  
 
 SYSTEM_PATH =
 
 # Gstreamer
 GSTREAMER_DIRH = -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/include/glib-2.0/gobject -I/usr/include/glib-2.0/include -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
-GSTREAMER_LIB = -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0
+GSTREAMER_LIB = -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -lc
 GSTREAMER_LIB_PATH =
 
 INCLUDES = $(GSTREAMER_DIRH)
@@ -36,7 +37,7 @@ BINTOOL = fromelf
 #	$(BINTOOL) -bin -o $@ $^
 
 $(TARGET) : $(OBJECTS)
-	$(LD) $(LFLAGS) $(LIBS) -o $@ $^  
+	@$(LD) $(LFLAGS) $(LIBS) -o $@ $^  
 
 #	exit
 #	echo	$(INCLUDES) 
@@ -44,8 +45,10 @@ $(TARGET) : $(OBJECTS)
 
 # Normally, it defines in makefile system. It's better to define explicit. 
 %o : %c
-	$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $^ 
+	@$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $^ 
 # Clean
-#.PHOHY : clean
-#	@rm *.o
-#	@gsample
+clean :
+	@rm *.o
+	@rm $(TARGET)
+
+.PHONY : clean
