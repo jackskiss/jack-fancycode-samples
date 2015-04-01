@@ -9,9 +9,9 @@ OBJECTS = $(SRC:.c=.o)
 FLAGS = 
 CFLAGS = -Wall
 #CFLAGS=--sysroot=/
-LD = ld
-LFLAGS = --entry main
-#LFLAGS =
+LD = gcc
+LFLAGS =
+#LFLAGS =  --entry main
 DIRS=.  
 
 SYSTEM_PATH =
@@ -39,11 +39,11 @@ BINTOOL = fromelf
 #	$(BINTOOL) -bin -o $@ $^
 
 $(TARGET) : $(OBJECTS)
-	@$(LD) $(LFLAGS) $(LIBS) -o $@ $^  
+	@$(LD) $(LFLAGS)  -o $@ $^ $(LIBS) 
 
 # Normally, it defines in makefile system. It's better to define explicit. 
 %o : %c
-	@$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $^ 
+	@$(CC) -c $(CFLAGS) $(INCLUDES) -o $@ $^
 # Clean
 clean :
 	@rm *.o 
