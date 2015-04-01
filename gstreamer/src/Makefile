@@ -45,8 +45,9 @@ $(TARGET) : $(OBJECTS)
 %o : %c
 	@$(CC) -c $(CFLAGS) $(INCLUDES) -o $@ $^
 # Clean
+.PHONY : clean
+
 clean :
 	@rm *.o 
 	@rm $(TARGET)
 
-.PHONY : clean
