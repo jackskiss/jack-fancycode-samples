@@ -48,6 +48,10 @@ $(TARGET) : $(OBJECTS)
 .PHONY : clean
 
 clean :
+ifneq (, $(wildcard *.o))
 	@rm *.o 
-	@rm $(TARGET)
+endif
 
+ifneq (, $(wildcard $(TARGET)))
+	@rm $(TARGET)
+endif
