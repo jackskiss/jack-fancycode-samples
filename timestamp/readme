@@ -1,0 +1,20 @@
+#define T_NUM 32
+static unsigned long g_usb_transfer_ns[T_NUM], g_copy_to_user_ns[T_NUM];
+static int 	g_transfer_size[T_NUM];
+int t_index = 0;
+
+struct timespec t0, t1;
+
+getnstimeofday(&t0);
+getnstimeofday(&t1);
+
+t1 = timespec_sub(t1, t0);
+
+g_usb_transfer_ns[t_index] = t1.tv_sec;
+g_usb_transfer_ns[t_index] *= 1000000000;
+g_usb_transfer_ns[t_index] += t1.tv_nsec;
+
+printk("%lu ns, %lu ns , %d byte\n", g_usb_transfer_ns[i], g_copy_to_user_ns[i], g_transfer_size[i]);
+
+
+
