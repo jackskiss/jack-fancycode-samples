@@ -19,12 +19,13 @@ SYSTEM_PATH =
 # Gstreamer
 GSTREAMER_DIRH = -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/include/glib-2.0/gobject -I/usr/include/glib-2.0/include -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 GSTREAMER_LIB = -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0
-GSTREAMER_LIB_PATH =
+GSTREAMER_LIB_PATH = -L/usr/lib/x86_64-linux-gnu
 
 SYSTEM_LIB = -lc
 
 INCLUDES = $(GSTREAMER_DIRH)
 LIBS = $(GSTREAMER_LIB) $(SYSTEM_LIB)
+LIB_PATHS = $(GSTREAMER_LIB_PATH)
 
 TARGET = gsample
 
@@ -39,11 +40,13 @@ BINTOOL = fromelf
 #	$(BINTOOL) -bin -o $@ $^
 
 $(TARGET) : $(OBJECTS)
-	@$(LD) $(LFLAGS)  -o $@ $^ $(LIBS) 
+
+	@$(LD) $(LFLAGS) $(LIB_PATHS) $(LIBS) -o $@ $^  
 
 # Normally, it defines in makefile system. It's better to define explicit. 
 %o : %c
-	@$(CC) -c $(CFLAGS) $(INCLUDES) -o $@ $^
+	@$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $^ 
+
 # Clean
 .PHONY : clean
 
@@ -52,6 +55,5 @@ ifneq (, $(wildcard *.o))
 	@rm *.o 
 endif
 
-ifneq (, $(wildcard $(TARGET)))
-	@rm $(TARGET)
-endif
+# Should be defined due to prevent to define in another location
+.PHONY : clean
