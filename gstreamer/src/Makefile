@@ -45,7 +45,7 @@ $(TARGET) : $(OBJECTS)
 
 # Normally, it defines in makefile system. It's better to define explicit. 
 %o : %c
-	@$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $^ 
+	@$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBS) -o $@ $< 
 
 # Clean
 .PHONY : clean
