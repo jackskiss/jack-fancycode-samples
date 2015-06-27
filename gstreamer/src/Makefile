@@ -43,7 +43,7 @@ BINTOOL = fromelf
 
 $(TARGET) : $(OBJECTS)
 
-	@$(LD) $(LFLAGS) $(LIB_PATHS) $(LIBS) -o $@ $^  
+	@$(LD) $(LFLAGS) -o $@ $^ $(LIB_PATHS) $(LIBS)  
 
 # Normally, it defines in makefile system. It's better to define explicit. 
 %o : %c
