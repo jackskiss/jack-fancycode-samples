@@ -30,7 +30,15 @@ ASSERT_STRCASENE(str1, str2);	EXPECT_STRCASENE(str1, str2);	the two C strings ha
 
 class calculator_test : public testing::Test
 {
+protected:
+	virtual void SetUp()
+	{
 
+	}
+	virtual void TearDown()
+	{
+
+	}
 public:
 	int sum(int a, int b)
 	{
@@ -50,5 +58,5 @@ TEST_F(calculator_test, sum)
 
 TEST_F(calculator_test, minus)
 {
-	EXPECT_EQ(1, minus(2,1));
+	EXPECT_EQ(0, minus(2,1));
 }
