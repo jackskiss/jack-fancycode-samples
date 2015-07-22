@@ -1,0 +1,20 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		},
+		{
+			"path": "/usr/include"
+		},
+		{
+			"path": "/home/jack/projects/opensource/bluez"
+		},
+		{
+			"path": "/home/jack/projects/kernel/ubuntu/linux-3.13.0/net/bluetooth"
+		},
+		{
+			"path": "/home/jack/projects/kernel/ubuntu/linux-3.13.0/include/net/bluetooth"
+		}
+	]
+}

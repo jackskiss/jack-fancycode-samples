@@ -1,0 +1,1244 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"dev",
+				"dev_id"
+			],
+			[
+				"d",
+				"d_type"
+			],
+			[
+				"h",
+				"hci_1"
+			],
+			[
+				"hc",
+				"hci_0"
+			],
+			[
+				"num",
+				"num_hci"
+			],
+			[
+				"en",
+				"entry"
+			],
+			[
+				"de",
+				"dev_id"
+			],
+			[
+				"K",
+				"KERNEL_PATH"
+			],
+			[
+				"B",
+				"BT_PATH"
+			],
+			[
+				"INC",
+				"INCPATH"
+			],
+			[
+				"IN",
+				"INCPATH"
+			],
+			[
+				"L",
+				"LIBS"
+			],
+			[
+				"GS",
+				"GSTREMER_LIB"
+			],
+			[
+				"sys",
+				"--sysroot"
+			],
+			[
+				"includ",
+				"include"
+			],
+			[
+				"T",
+				"TARGETELF"
+			],
+			[
+				"TAR",
+				"TARGET"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "/usr/include/bluetooth/hci_lib.h",
+			"settings":
+			{
+				"buffer_size": 9916,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Makefile",
+			"settings":
+			{
+				"buffer_size": 1525,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "hcilocal.h",
+			"settings":
+			{
+				"buffer_size": 525,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "/*\n* browser.c\n*/\n\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n#include <sys/socket.h>\n#include <dirent.h>\n#include <errno.h>\n#include <string.h>\n#include <bluetooth/bluetooth.h>\n#include <bluetooth/hci.h>\n#include <bluetooth/hci_lib.h>\n#include <sys/ioctl.h>\n#include <hcilocal.h>\n\n#define SYS_HCI_DIR \"/sys/class/bluetooth\"\n\nstatic int hci_count()\n{\n	int count = 0;\n	DIR * dirp;\n	struct dirent * entry;\n\n	dirp = opendir(SYS_HCI_DIR);\n\n	if(dirp == NULL) {\n		perror(\"Cannot open dir\");\n		return -1;\n	}\n\n	while((entry = readdir(dirp)) != NULL)\n	{\n		if (entry->d_type == DT_LNK) { /* directory type is not unknown */\n//		if (entry->d_type != DT_UNKNOWN) { /* directory type is not unknown */\n			printf(\"%s type is %d\\n\", entry->d_name, entry->d_type);\n			count++;\n		}\n	}\n\n	closedir(dirp);\n\n	return count;\n}\n\nstatic void hci_info(int devid)\n{\n	int ret;\n	struct hci_dev_info info;\n\n	//get_name()\n\n//	ret = hci_dev_info (devid, &info);\n\n/*	struct hci_dev_info {\n		uint16_t dev_id;\n		char     name[8];\n\n		bdaddr_t bdaddr;\n\n		uint32_t flags;\n		uint8_t  type;\n\n		uint8_t  features[8];\n\n		uint32_t pkt_type;\n		uint32_t link_policy;\n		uint32_t link_mode;\n\n		uint16_t acl_mtu;\n		uint16_t acl_pkts;\n		uint16_t sco_mtu;\n		uint16_t sco_pkts;\n\n		struct   hci_dev_stats stat;\n	};	\n*/\n}\n\n\n\nint main(int argc, char **argv)\n{\n	inquiry_info *ii = NULL;\n	int dev_id, sock;\n	int len, i;\n	int num_rsp, max_rsp, flags;\n	int num_hci;\n	int   devs[16];\n\n	char addr[19] = { 0 };\n	char name[248] = { 0 };\n	bdaddr_t leadd_0 = {{0x00, 0x19, 0x0e, 0x15, 0x57, 0x23}};\n	bdaddr_t leadd_1 = {{0xe0, 0x2a, 0x82, 0xc7, 0xa1, 0xd9}};\n\n	char * hci_0 = \"00:19:0e:15:57:23\";\n	char * hci_1 = \"e0:2a:82:c7:a1:d9\";\n\n	num_hci = hci_count();\n\n//	dev_id = hci_get_route(NULL);\n	dev_id = hci_get_route(&leadd_1);\n\n	printf(\"device id : %d\\n\", dev_id);\n\n	dev_id = hci_devid(hci_0);	\n\n	printf(\"device id : %d\\n\", dev_id);\n\n	dev_id = hci_devid(hci_1);	\n\n	printf(\"device id : %d\\n\", dev_id);\n\n	ba2str(&leadd_0, name);\n\n	printf(\"hci_0 address : %s\\n\", name);\n\n	printf(\"Adaptor number : %d\\n\", num_hci);\n\n	if (num_hci <= 0) {\n		perror(\"No hci device\");\n		exit(1);\n	}\n\n	for (dev_id = 0 ; dev_id < num_hci; dev_id++)\n	{\n		sock = hci_open_dev(dev_id);\n\n		cmd_scan(sock, dev_id, \"piscan\");\n\n	    len  = 8;\n	    max_rsp = 255;\n	    flags = IREQ_CACHE_FLUSH;\n	    ii = (inquiry_info*)malloc(max_rsp * sizeof(inquiry_info));\n	    \n	    num_rsp = hci_inquiry(dev_id, len, max_rsp, NULL, &ii, flags);\n	    if( num_rsp < 0 ) perror(\"hci_inquiry\");\n\n	    printf (\"num_rsp : %d\\n\", num_rsp);\n\n	    for (i = 0; i < num_rsp; i++) {\n	        ba2str(&(ii+i)->bdaddr, addr);\n	        memset(name, 0, sizeof(name));\n	        /* Display scanned device list */\n	        if (hci_read_remote_name(sock, &(ii+i)->bdaddr, sizeof(name), \n	            name, 0) < 0)\n	        strcpy(name, \"[unknown]\");\n	        printf(\"%s  %s\\n\", addr, name);\n	    }\n\n	    free( ii );\n	    close( sock );\n	    hci_close_dev(dev_id);\n	}\n\n	return 0;\n}\n",
+			"file": "browser.c",
+			"file_size": 3512,
+			"file_write_time": 130819912077613146,
+			"settings":
+			{
+				"buffer_size": 2967,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/usr/include/x86_64-linux-gnu/bits/socket.h",
+			"settings":
+			{
+				"buffer_size": 12741,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/usr/include/bluetooth/bluetooth.h",
+			"settings":
+			{
+				"buffer_size": 7588,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/usr/include/bluetooth/hci.h",
+			"settings":
+			{
+				"buffer_size": 61964,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 4624 files for \"HCIGETDEVINFO\"\n\n/usr/include/bluetooth/hci.h:\n   89  \n   90  #define HCIGETDEVLIST	_IOR('H', 210, int)\n   91: #define HCIGETDEVINFO	_IOR('H', 211, int)\n   92  #define HCIGETCONNLIST	_IOR('H', 212, int)\n   93  #define HCIGETCONNINFO	_IOR('H', 213, int)\n\n~/projects/opensource/bluez/lib/.hci.h.swp:\n    <binary>\n\n/home/jack/projects/opensource/bluez/lib/hci.c:\n  880  	struct hci_dev_info di = { .dev_id = dev_id };\n  881  \n  882: 	if (ioctl(dd, HCIGETDEVINFO, (void *) &di))\n  883  		return 0;\n  884  \n  ...\n  893  	struct hci_dev_info di = { .dev_id = dev_id };\n  894  \n  895: 	if (ioctl(dd, HCIGETDEVINFO, (void *) &di))\n  896  		return 0;\n  897  \n  ...\n  941  \n  942  	di->dev_id = dev_id;\n  943: 	ret = ioctl(dd, HCIGETDEVINFO, (void *) di);\n  944  \n  945  	err = errno;\n\n/home/jack/projects/opensource/bluez/lib/hci.h:\n   89  \n   90  #define HCIGETDEVLIST	_IOR('H', 210, int)\n   91: #define HCIGETDEVINFO	_IOR('H', 211, int)\n   92  #define HCIGETCONNLIST	_IOR('H', 212, int)\n   93  #define HCIGETCONNINFO	_IOR('H', 213, int)\n\n/home/jack/projects/opensource/bluez/lib/bluetooth/hci.h:\n   89  \n   90  #define HCIGETDEVLIST	_IOR('H', 210, int)\n   91: #define HCIGETDEVINFO	_IOR('H', 211, int)\n   92  #define HCIGETCONNLIST	_IOR('H', 212, int)\n   93  #define HCIGETCONNINFO	_IOR('H', 213, int)\n\n/home/jack/projects/opensource/bluez/monitor/hcidump.c:\n  206  	di.dev_id = index;\n  207  \n  208: 	if (ioctl(fd, HCIGETDEVINFO, (void *) &di) < 0) {\n  209  		perror(\"Failed to get device information\");\n  210  		return;\n\n/home/jack/projects/opensource/bluez/tools/amptest.c:\n   57  	di.dev_id = dev_id;\n   58  \n   59: 	if (ioctl(fd, HCIGETDEVINFO, (void *) &di) < 0) {\n   60  		perror(\"Failed to get HCI device info\");\n   61  		close(fd);\n   ..\n  526  		di.dev_id = (dr + i)->dev_id;\n  527  \n  528: 		if (ioctl(fd, HCIGETDEVINFO, (void *) &di) < 0)\n  529  			continue;\n  530  \n\n/home/jack/projects/opensource/bluez/tools/btinfo.c:\n   76  #define HCIDEVUP	_IOW('H', 201, int)\n   77  #define HCIDEVDOWN	_IOW('H', 202, int)\n   78: #define HCIGETDEVINFO	_IOR('H', 211, int)\n   79  \n   80  #define HCI_UP		(1 << 0)\n   ..\n  302  	hci_info.dev_id = index;\n  303  \n  304: 	if (ioctl(fd, HCIGETDEVINFO, (void *) &hci_info) < 0) {\n  305  		perror(\"Failed to get HCI device information\");\n  306  		close(fd);\n\n/home/jack/projects/opensource/bluez/tools/cltest.c:\n  226  		di.dev_id = (dr + i)->dev_id;\n  227  \n  228: 		if (ioctl(fd, HCIGETDEVINFO, (void *) &di) < 0)\n  229  			continue;\n  230  \n\n/home/jack/projects/opensource/bluez/tools/hciconfig.c:\n   75  	for (i = 0; i< dl->dev_num; i++) {\n   76  		di.dev_id = (dr+i)->dev_id;\n   77: 		if (ioctl(ctl, HCIGETDEVINFO, (void *) &di) < 0)\n   78  			continue;\n   79  		print_dev_info(ctl, &di);\n   ..\n 2010  	argc--; argv++;\n 2011  \n 2012: 	if (ioctl(ctl, HCIGETDEVINFO, (void *) &di)) {\n 2013  		perror(\"Can't get device info\");\n 2014  		exit(1);\n\n/home/jack/projects/opensource/bluez/tools/hcitool.c:\n   98  	char addr[18];\n   99  \n  100: 	if (ioctl(s, HCIGETDEVINFO, (void *) &di))\n  101  		return 0;\n  102  \n\n16 matches across 11 files\n",
+			"settings":
+			{
+				"buffer_size": 3099,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/lib/hci.c",
+			"settings":
+			{
+				"buffer_size": 65299,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/lib/hci.h",
+			"settings":
+			{
+				"buffer_size": 63685,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/lib/bluetooth/hci.h",
+			"settings":
+			{
+				"buffer_size": 63685,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/monitor/hcidump.c",
+			"settings":
+			{
+				"buffer_size": 8707,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/tools/amptest.c",
+			"settings":
+			{
+				"buffer_size": 14797,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "hcilocal.c",
+			"settings":
+			{
+				"buffer_size": 1940,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/kernel/ubuntu/linux-3.13.0/include/net/bluetooth/hci_core.h",
+			"settings":
+			{
+				"buffer_size": 32490,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/kernel/ubuntu/linux-3.13.0/include/net/bluetooth/sco.h",
+			"settings":
+			{
+				"buffer_size": 2092,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/tools/btinfo.c",
+			"settings":
+			{
+				"buffer_size": 7980,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/tools/cltest.c",
+			"settings":
+			{
+				"buffer_size": 6182,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "/* Copyright (C) 1991-2014 Free Software Foundation, Inc.\n   This file is part of the GNU C Library.\n\n   The GNU C Library is free software; you can redistribute it and/or\n   modify it under the terms of the GNU Lesser General Public\n   License as published by the Free Software Foundation; either\n   version 2.1 of the License, or (at your option) any later version.\n\n   The GNU C Library is distributed in the hope that it will be useful,\n   but WITHOUT ANY WARRANTY; without even the implied warranty of\n   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n   Lesser General Public License for more details.\n\n   You should have received a copy of the GNU Lesser General Public\n   License along with the GNU C Library; if not, see\n   <http://www.gnu.org/licenses/>.  */\n\n/*\n *	POSIX Standard: 5.1.2 Directory Operations	<dirent.h>\n */\n\n#ifndef	_DIRENT_H\n#define	_DIRENT_H	1\n\n#include <features.h>\n\n__BEGIN_DECLS\n\n#include <bits/types.h>\n\n#ifdef __USE_XOPEN\n# ifndef __ino_t_defined\n#  ifndef __USE_FILE_OFFSET64\ntypedef __ino_t ino_t;\n#  else\ntypedef __ino64_t ino_t;\n#  endif\n#  define __ino_t_defined\n# endif\n# if defined __USE_LARGEFILE64 && !defined __ino64_t_defined\ntypedef __ino64_t ino64_t;\n#  define __ino64_t_defined\n# endif\n#endif\n\n/* This file defines `struct dirent'.\n\n   It defines the macro `_DIRENT_HAVE_D_NAMLEN' iff there is a `d_namlen'\n   member that gives the length of `d_name'.\n\n   It defines the macro `_DIRENT_HAVE_D_RECLEN' iff there is a `d_reclen'\n   member that gives the size of the entire directory entry.\n\n   It defines the macro `_DIRENT_HAVE_D_OFF' iff there is a `d_off'\n   member that gives the file offset of the next directory entry.\n\n   It defines the macro `_DIRENT_HAVE_D_TYPE' iff there is a `d_type'\n   member that gives the type of the file.\n */\n\n#include <bits/dirent.h>\n\n#if (defined __USE_BSD || defined __USE_MISC) && !defined d_fileno\n# define d_ino	d_fileno		 /* Backward compatibility.  */\n#endif\n\n/* These macros extract size information from a `struct dirent *'.\n   They may evaluate their argument multiple times, so it must not\n   have side effects.  Each of these may involve a relatively costly\n   call to `strlen' on some systems, so these values should be cached.\n\n   _D_EXACT_NAMLEN (DP)	returns the length of DP->d_name, not including\n   its terminating null character.\n\n   _D_ALLOC_NAMLEN (DP)	returns a size at least (_D_EXACT_NAMLEN (DP) + 1);\n   that is, the allocation size needed to hold the DP->d_name string.\n   Use this macro when you don't need the exact length, just an upper bound.\n   This macro is less likely to require calling `strlen' than _D_EXACT_NAMLEN.\n   */\n\n#ifdef _DIRENT_HAVE_D_NAMLEN\n# define _D_EXACT_NAMLEN(d) ((d)->d_namlen)\n# define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN (d) + 1)\n#else\n# define _D_EXACT_NAMLEN(d) (strlen ((d)->d_name))\n# ifdef _DIRENT_HAVE_D_RECLEN\n#  define _D_ALLOC_NAMLEN(d) (((char *) (d) + (d)->d_reclen) - &(d)->d_name[0])\n# else\n#  define _D_ALLOC_NAMLEN(d) (sizeof (d)->d_name > 1 ? sizeof (d)->d_name : \\\n			      _D_EXACT_NAMLEN (d) + 1)\n# endif\n#endif\n\n\n#ifdef __USE_BSD\n/* File types for `d_type'.  */\nenum\n  {\n    DT_UNKNOWN = 0,\n# define DT_UNKNOWN	DT_UNKNOWN\n    DT_FIFO = 1,\n# define DT_FIFO	DT_FIFO\n    DT_CHR = 2,\n# define DT_CHR		DT_CHR \n    DT_DIR = 4,\n# define DT_DIR		DT_DIR\n    DT_BLK = 6,\n# define DT_BLK		DT_BLK\n    DT_REG = 8,\n# define DT_REG		DT_REG\n    DT_LNK = 10,\n# define DT_LNK		DT_LNK\n    DT_SOCK = 12,\n# define DT_SOCK	DT_SOCK\n    DT_WHT = 14\n# define DT_WHT		DT_WHT\n  };\n\n/* Convert between stat structure types and directory types.  */\n# define IFTODT(mode)	(((mode) & 0170000) >> 12)\n# define DTTOIF(dirtype)	((dirtype) << 12)\n#endif\n\n\n/* This is the data type of directory stream objects.\n   The actual structure is opaque to users.  */\ntypedef struct __dirstream DIR;\n\n/* Open a directory stream on NAME.\n   Return a DIR stream on the directory, or NULL if it could not be opened.\n\n   This function is a possible cancellation point and therefore not\n   marked with __THROW.  */\nextern DIR *opendir (const char *__name) __nonnull ((1));\n\n#ifdef __USE_XOPEN2K8\n/* Same as opendir, but open the stream on the file descriptor FD.\n\n   This function is a possible cancellation point and therefore not\n   marked with __THROW.  */\nextern DIR *fdopendir (int __fd);\n#endif\n\n/* Close the directory stream DIRP.\n   Return 0 if successful, -1 if not.\n\n   This function is a possible cancellation point and therefore not\n   marked with __THROW.  */\nextern int closedir (DIR *__dirp) __nonnull ((1));\n\n/* Read a directory entry from DIRP.  Return a pointer to a `struct\n   dirent' describing the entry, or NULL for EOF or error.  The\n   storage returned may be overwritten by a later readdir call on the\n   same DIR stream.\n\n   If the Large File Support API is selected we have to use the\n   appropriate interface.\n\n   This function is a possible cancellation point and therefore not\n   marked with __THROW.  */\n#ifndef __USE_FILE_OFFSET64\nextern struct dirent *readdir (DIR *__dirp) __nonnull ((1));\n#else\n# ifdef __REDIRECT\nextern struct dirent *__REDIRECT (readdir, (DIR *__dirp), readdir64)\n     __nonnull ((1));\n# else\n#  define readdir readdir64\n# endif\n#endif\n\n#ifdef __USE_LARGEFILE64\nextern struct dirent64 *readdir64 (DIR *__dirp) __nonnull ((1));\n#endif\n\n#if defined __USE_POSIX || defined __USE_MISC\n/* Reentrant version of `readdir'.  Return in RESULT a pointer to the\n   next entry.\n\n   This function is a possible cancellation point and therefore not\n   marked with __THROW.  */\n# ifndef __USE_FILE_OFFSET64\nextern int readdir_r (DIR *__restrict __dirp,\n		      struct dirent *__restrict __entry,\n		      struct dirent **__restrict __result)\n     __nonnull ((1, 2, 3));\n# else\n#  ifdef __REDIRECT\nextern int __REDIRECT (readdir_r,\n		       (DIR *__restrict __dirp,\n			struct dirent *__restrict __entry,\n			struct dirent **__restrict __result),\n		       readdir64_r) __nonnull ((1, 2, 3));\n#  else\n#   define readdir_r readdir64_r\n#  endif\n# endif\n\n# ifdef __USE_LARGEFILE64\nextern int readdir64_r (DIR *__restrict __dirp,\n			struct dirent64 *__restrict __entry,\n			struct dirent64 **__restrict __result)\n     __nonnull ((1, 2, 3));\n# endif\n#endif	/* POSIX or misc */\n\n/* Rewind DIRP to the beginning of the directory.  */\nextern void rewinddir (DIR *__dirp) __THROW __nonnull ((1));\n\n#if defined __USE_BSD || defined __USE_MISC || defined __USE_XOPEN\n# include <bits/types.h>\n\n/* Seek to position POS on DIRP.  */\nextern void seekdir (DIR *__dirp, long int __pos) __THROW __nonnull ((1));\n\n/* Return the current position of DIRP.  */\nextern long int telldir (DIR *__dirp) __THROW __nonnull ((1));\n#endif\n\n#if defined __USE_BSD || defined __USE_MISC || defined __USE_XOPEN2K8\n\n/* Return the file descriptor used by DIRP.  */\nextern int dirfd (DIR *__dirp) __THROW __nonnull ((1));\n\n# if defined __OPTIMIZE__ && defined _DIR_dirfd\n#  define dirfd(dirp)	_DIR_dirfd (dirp)\n# endif\n\n# if defined __USE_BSD || defined __USE_MISC\n#  ifndef MAXNAMLEN\n/* Get the definitions of the POSIX.1 limits.  */\n#  include <bits/posix1_lim.h>\n\n/* `MAXNAMLEN' is the BSD name for what POSIX calls `NAME_MAX'.  */\n#   ifdef NAME_MAX\n#    define MAXNAMLEN	NAME_MAX\n#   else\n#    define MAXNAMLEN	255\n#   endif\n#  endif\n# endif\n\n# define __need_size_t\n# include <stddef.h>\n\n/* Scan the directory DIR, calling SELECTOR on each directory entry.\n   Entries for which SELECT returns nonzero are individually malloc'd,\n   sorted using qsort with CMP, and collected in a malloc'd array in\n   *NAMELIST.  Returns the number of entries selected, or -1 on error.\n\n   This function is a cancellation point and therefore not marked with\n   __THROW.  */\n# ifndef __USE_FILE_OFFSET64\nextern int scandir (const char *__restrict __dir,\n		    struct dirent ***__restrict __namelist,\n		    int (*__selector) (const struct dirent *),\n		    int (*__cmp) (const struct dirent **,\n				  const struct dirent **))\n     __nonnull ((1, 2));\n# else\n#  ifdef __REDIRECT\nextern int __REDIRECT (scandir,\n		       (const char *__restrict __dir,\n			struct dirent ***__restrict __namelist,\n			int (*__selector) (const struct dirent *),\n			int (*__cmp) (const struct dirent **,\n				      const struct dirent **)),\n		       scandir64) __nonnull ((1, 2));\n#  else\n#   define scandir scandir64\n#  endif\n# endif\n\n# if defined __USE_GNU && defined __USE_LARGEFILE64\n/* This function is like `scandir' but it uses the 64bit dirent structure.\n   Please note that the CMP function must now work with struct dirent64 **.  */\nextern int scandir64 (const char *__restrict __dir,\n		      struct dirent64 ***__restrict __namelist,\n		      int (*__selector) (const struct dirent64 *),\n		      int (*__cmp) (const struct dirent64 **,\n				    const struct dirent64 **))\n     __nonnull ((1, 2));\n# endif\n\n# ifdef __USE_GNU\n/* Similar to `scandir' but a relative DIR name is interpreted relative\n   to the directory for which DFD is a descriptor.\n\n   This function is a cancellation point and therefore not marked with\n   __THROW.  */\n#  ifndef __USE_FILE_OFFSET64\nextern int scandirat (int __dfd, const char *__restrict __dir,\n		      struct dirent ***__restrict __namelist,\n		      int (*__selector) (const struct dirent *),\n		      int (*__cmp) (const struct dirent **,\n				    const struct dirent **))\n     __nonnull ((2, 3));\n#  else\n#   ifdef __REDIRECT\nextern int __REDIRECT (scandirat,\n		       (int __dfd, const char *__restrict __dir,\n			struct dirent ***__restrict __namelist,\n			int (*__selector) (const struct dirent *),\n			int (*__cmp) (const struct dirent **,\n				      const struct dirent **)),\n		       scandirat64) __nonnull ((2, 3));\n#   else\n#    define scandirat scandirat64\n#   endif\n#  endif\n\n/* This function is like `scandir' but it uses the 64bit dirent structure.\n   Please note that the CMP function must now work with struct dirent64 **.  */\nextern int scandirat64 (int __dfd, const char *__restrict __dir,\n			struct dirent64 ***__restrict __namelist,\n			int (*__selector) (const struct dirent64 *),\n			int (*__cmp) (const struct dirent64 **,\n				      const struct dirent64 **))\n     __nonnull ((2, 3));\n# endif\n\n/* Function to compare two `struct dirent's alphabetically.  */\n# ifndef __USE_FILE_OFFSET64\nextern int alphasort (const struct dirent **__e1,\n		      const struct dirent **__e2)\n     __THROW __attribute_pure__ __nonnull ((1, 2));\n# else\n#  ifdef __REDIRECT\nextern int __REDIRECT_NTH (alphasort,\n			   (const struct dirent **__e1,\n			    const struct dirent **__e2),\n			   alphasort64) __attribute_pure__ __nonnull ((1, 2));\n#  else\n#   define alphasort alphasort64\n#  endif\n# endif\n\n# if defined __USE_GNU && defined __USE_LARGEFILE64\nextern int alphasort64 (const struct dirent64 **__e1,\n			const struct dirent64 **__e2)\n     __THROW __attribute_pure__ __nonnull ((1, 2));\n# endif\n#endif /* Use BSD or misc or XPG7.  */\n\n\n#if defined __USE_BSD || defined __USE_MISC\n/* Read directory entries from FD into BUF, reading at most NBYTES.\n   Reading starts at offset *BASEP, and *BASEP is updated with the new\n   position after reading.  Returns the number of bytes read; zero when at\n   end of directory; or -1 for errors.  */\n# ifndef __USE_FILE_OFFSET64\nextern __ssize_t getdirentries (int __fd, char *__restrict __buf,\n				size_t __nbytes,\n				__off_t *__restrict __basep)\n     __THROW __nonnull ((2, 4));\n# else\n#  ifdef __REDIRECT\nextern __ssize_t __REDIRECT_NTH (getdirentries,\n				 (int __fd, char *__restrict __buf,\n				  size_t __nbytes,\n				  __off64_t *__restrict __basep),\n				 getdirentries64) __nonnull ((2, 4));\n#  else\n#   define getdirentries getdirentries64\n#  endif\n# endif\n\n# ifdef __USE_LARGEFILE64\nextern __ssize_t getdirentries64 (int __fd, char *__restrict __buf,\n				  size_t __nbytes,\n				  __off64_t *__restrict __basep)\n     __THROW __nonnull ((2, 4));\n# endif\n#endif /* Use BSD or misc.  */\n\n#ifdef __USE_GNU\n/* Function to compare two `struct dirent's by name & version.  */\n# ifndef __USE_FILE_OFFSET64\nextern int versionsort (const struct dirent **__e1,\n			const struct dirent **__e2)\n     __THROW __attribute_pure__ __nonnull ((1, 2));\n# else\n#  ifdef __REDIRECT\nextern int __REDIRECT_NTH (versionsort,\n			   (const struct dirent **__e1,\n			    const struct dirent **__e2),\n			   versionsort64)\n     __attribute_pure__ __nonnull ((1, 2));\n#  else\n#   define versionsort versionsort64\n#  endif\n# endif\n\n# ifdef __USE_LARGEFILE64\nextern int versionsort64 (const struct dirent64 **__e1,\n			  const struct dirent64 **__e2)\n     __THROW __attribute_pure__ __nonnull ((1, 2));\n# endif\n#endif /* Use GNU.  */\n\n__END_DECLS\n\n#endif /* dirent.h  */\n",
+			"file": "/usr/include/dirent.h",
+			"file_size": 12602,
+			"file_write_time": 130693568210000000,
+			"settings":
+			{
+				"buffer_size": 12603,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/usr/include/x86_64-linux-gnu/bits/dirent.h",
+			"settings":
+			{
+				"buffer_size": 1728,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/tools/hciconfig.c",
+			"settings":
+			{
+				"buffer_size": 47688,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/jack/projects/opensource/bluez/tools/hcitool.c",
+			"settings":
+			{
+				"buffer_size": 72309,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 75.0,
+		"last_filter": "instal",
+		"selected_items":
+		[
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"package in",
+				"Package Control: Install Package"
+			],
+			[
+				"Package",
+				"Package Control: Install Package"
+			],
+			[
+				"Pack",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 54.0,
+		"history":
+		[
+			"view.run_command('run_lint')",
+			"import urllib.request,os,hashlib; h = 'eb2297e1a458f27d836c04bb0cbaf282' + 'd0e7a3098092775ccb37ca9d6b2e4b7d'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/jack/projects/jack-fancycode-samples/bluez/le/browser",
+		"/home/jack/projects/opensource/bluez",
+		"/home/jack/projects/kernel/ubuntu/linux-3.13.0/net/bluetooth",
+		"/home/jack/projects/kernel/ubuntu/linux-3.13.0/include/net/bluetooth"
+	],
+	"file_history":
+	[
+		"/home/jack/projects/opensource/bluez/acinclude.m4",
+		"/home/jack/projects/opensource/bluez/Makefile.tools",
+		"/home/jack/projects/opensource/bluez/tools/hciconfig.c",
+		"/home/jack/projects/opensource/bluez/Makefile",
+		"/home/jack/projects/jack-fancycode-samples/bluez/le/browser/Makefile",
+		"/usr/include/x86_64-linux-gnu/bits/dirent.h",
+		"/home/jack/.config/sublime-text-3/Packages/User/run_lint.py",
+		"/home/jack/projects/jack-fancycode-samples/bluez/le/browser/browser.c",
+		"/home/jack/Downloads/한글자막_채피_chappie_2015_1080p_web_rip_h264_aac_kingdom___액션1.smi",
+		"/home/jack/Downloads/Chappie 2015 1080p BRRip x264 DTS-JYK.smi",
+		"/home/jack/projects/jack-fancycode-samples/bluez/le/browser/test.cpp",
+		"/home/jack/projects/AppConnector/appconnector-sdk/b2ap/hu/build/android/customer/obigo/app/src/main/java/com/obigo/b2ap/B2apMainActivity.java",
+		"/home/jack/projects/AppConnector/appconnector-sdk/b2ap/hu/b2apd/acp/src/AcpPortMapTables.c",
+		"/home/jack/projects/AppConnector/appconnector-sdk/b2ap/hu/b2apd/acp/include/AcpPortMapTables.h",
+		"/home/jack/projects/AppConnector/appconnector-sdk/b2ap/hu/customer/obigo/android/iap/include/allgo/iAPAcc_common.h",
+		"/home/jack/projects/AppConnector/appconnector-sdk/b2ap/hu/b2apd/acp/include/AcpInterfaces.h",
+		"/home/jack/.config/sublime-text-3/Packages/User/Preferences.sublime-settings",
+		"/home/jack/.config/sublime-text-3/Packages/User/Distraction Free.sublime-settings",
+		"/home/jack/.config/sublime-text-3/Packages/User/Plain text.sublime-settings",
+		"/home/jack/projects/target/imx6/android/boundary-imx_jb4.3_1.0.0-ga/device/boundary/AndroidProducts.mk",
+		"/home/jack/projects/target/imx6/android/boundary-imx_jb4.3_1.0.0-ga/device/boundary/cad/overlay/packages/apps/Launcher2/res/values/config.xml"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 93.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"LE",
+			"hci_read_local_name",
+			"name",
+			"cmd_lescan",
+			"le",
+			"HCIGETDEVINFO",
+			"hci_dev_info",
+			"hciconfig",
+			"hci_dev_info",
+			"HCISETSCAN",
+			"command",
+			"cmd_scan",
+			"scan",
+			"PF_BLUETOOTH",
+			"AF_BLUETOOTH",
+			"hci_dev_info",
+			"hci_get_devs",
+			"hci_get_route",
+			"bdaddr_t",
+			"hci_get_route",
+			"bdaddr_t",
+			"hci_get_route",
+			"IREQ_CACHE_FLUSH",
+			"d_type",
+			"Customer_CallbackStopSession",
+			"gAppConnectorCallbackHandle",
+			"B2APTL_Init",
+			"gCallbackHandle",
+			"AcpSessionStopCallback",
+			"B2AP_SESSION_DOWN",
+			"B2APT_Notify_StopSession",
+			"gnu",
+			"fromelf",
+			"CFLAGS",
+			"SKIP_WPA_SUPPLICANT_RTL",
+			"wpa_supplicant",
+			"syntax",
+			"make"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 13,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/usr/include/bluetooth/hci_lib.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9916,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1891,
+								1891
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 602.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "Makefile",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1525,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								10,
+								10
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Makefile/Makefile.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "hcilocal.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 525,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								475,
+								475
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "browser.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2967,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1286,
+								1286
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1360.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/usr/include/x86_64-linux-gnu/bits/socket.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12741,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2306,
+								2306
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 918.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 21,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/usr/include/bluetooth/bluetooth.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7588,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1244,
+								1244
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 296.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 20,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/usr/include/bluetooth/hci.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 61964,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2113,
+								2113
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 4689.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 17,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3099,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										144,
+										157
+									],
+									[
+										470,
+										483
+									],
+									[
+										618,
+										631
+									],
+									[
+										742,
+										755
+									],
+									[
+										921,
+										934
+									],
+									[
+										1186,
+										1199
+									],
+									[
+										1434,
+										1447
+									],
+									[
+										1653,
+										1666
+									],
+									[
+										1835,
+										1848
+									],
+									[
+										2056,
+										2069
+									],
+									[
+										2199,
+										2212
+									],
+									[
+										2442,
+										2455
+									],
+									[
+										2665,
+										2678
+									],
+									[
+										2815,
+										2828
+									],
+									[
+										3014,
+										3027
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								2993,
+								2999
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 1,
+							"result_base_dir": "",
+							"result_file_regex": "^([A-Za-z\\\\/<].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1316.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 16,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "/home/jack/projects/opensource/bluez/lib/hci.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 65299,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								22767,
+								22767
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 15630.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "/home/jack/projects/opensource/bluez/lib/hci.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 63685,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2098,
+								2098
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1146.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "/home/jack/projects/opensource/bluez/lib/bluetooth/hci.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 63685,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2098,
+								2098
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1146.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "/home/jack/projects/opensource/bluez/monitor/hcidump.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8707,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4533,
+								4533
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 3135.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "/home/jack/projects/opensource/bluez/tools/amptest.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14797,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11253,
+								11253
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 8575.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "hcilocal.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1940,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1940,
+								1940
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 814.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "/home/jack/projects/kernel/ubuntu/linux-3.13.0/include/net/bluetooth/hci_core.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 32490,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2333,
+								2333
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1445.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "/home/jack/projects/kernel/ubuntu/linux-3.13.0/include/net/bluetooth/sco.h",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 2092,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2,
+								2
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 3,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "/home/jack/projects/opensource/bluez/tools/btinfo.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7980,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6697,
+								6697
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 4767.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"file": "/home/jack/projects/opensource/bluez/tools/cltest.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6182,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5115,
+								5115
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 3475.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 18,
+					"file": "/usr/include/dirent.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12603,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3435,
+								3441
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1547.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 19,
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "/usr/include/x86_64-linux-gnu/bits/dirent.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1728,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								908,
+								908
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 150.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 18,
+					"type": "text"
+				},
+				{
+					"buffer": 20,
+					"file": "/home/jack/projects/opensource/bluez/tools/hciconfig.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 47688,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								16575,
+								16575
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 11524.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 21,
+					"file": "/home/jack/projects/opensource/bluez/tools/hcitool.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 72309,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2931,
+								2931
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1146.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 25.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "bluetooth.sublime-project",
+	"replace":
+	{
+		"height": 46.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"hcitool.c",
+				"bluez/tools/hcitool.c"
+			],
+			[
+				"hciconf",
+				"bluez/tools/hciconfig.c"
+			],
+			[
+				"make",
+				"browser/Makefile"
+			],
+			[
+				"hciconfig.c",
+				"bluez/tools/hciconfig.c"
+			],
+			[
+				"dirent",
+				"include/dirent.h"
+			],
+			[
+				"diren",
+				"include/x86_64-linux-gnu/bits/dirent.h"
+			],
+			[
+				"acpma",
+				"b2apd/acp/src/AcpPortMapTables.c"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 282.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

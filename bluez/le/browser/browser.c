@@ -8,9 +8,12 @@
 #include <sys/socket.h>
 #include <dirent.h>
 #include <errno.h>
+#include <string.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
+#include <sys/ioctl.h>
+#include <hcilocal.h>
 
 #define SYS_HCI_DIR "/sys/class/bluetooth"
 
@@ -46,7 +49,9 @@ static void hci_info(int devid)
 	int ret;
 	struct hci_dev_info info;
 
-	ret = hci_dev_info (devid, &info);
+	//get_name()
+
+//	ret = hci_dev_info (devid, &info);
 
 /*	struct hci_dev_info {
 		uint16_t dev_id;
@@ -85,6 +90,10 @@ static void cmd_scan(int ctl, int hdev, char *opt)
 		dr.dev_opt = SCAN_PAGE;
 	else if (!strcmp(opt, "piscan"))
 		dr.dev_opt = SCAN_PAGE | SCAN_INQUIRY;
+
+#ifndef HCISETSCAN
+#error "No define HCISETSCAN"
+#endif
 
 	if (ioctl(ctl, HCISETSCAN, (unsigned long) &dr) < 0) {
 		fprintf(stderr, "Can't set scan mode on hci%d: %s (%d)\n",
@@ -140,7 +149,7 @@ int main(int argc, char **argv)
 	{
 		sock = hci_open_dev(dev_id);
 
-		cmd_scan(sock, dev_id, "pscan");
+		cmd_scan(sock, dev_id, "piscan");
 
 	    len  = 8;
 	    max_rsp = 255;
