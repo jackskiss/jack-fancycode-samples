@@ -13,7 +13,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <sys/ioctl.h>
-#include <hcilocal.h>
+#include "hcilocal.h"
 
 #define SYS_HCI_DIR "/sys/class/bluetooth"
 
@@ -44,12 +44,15 @@ static int hci_count()
 	return count;
 }
 
-static void hci_info(int devid)
+static void hci_info(int socket, int devid)
 {
 	int ret;
+	char hciname[256];
 	struct hci_dev_info info;
 
 	//get_name()
+
+	get_name(socket, devid, hciname);
 
 //	ret = hci_dev_info (devid, &info);
 
@@ -78,29 +81,7 @@ static void hci_info(int devid)
 */
 }
 
-static void cmd_scan(int ctl, int hdev, char *opt)
-{
-	struct hci_dev_req dr;
 
-	dr.dev_id  = hdev;
-	dr.dev_opt = SCAN_DISABLED;
-	if (!strcmp(opt, "iscan"))
-		dr.dev_opt = SCAN_INQUIRY;
-	else if (!strcmp(opt, "pscan"))
-		dr.dev_opt = SCAN_PAGE;
-	else if (!strcmp(opt, "piscan"))
-		dr.dev_opt = SCAN_PAGE | SCAN_INQUIRY;
-
-#ifndef HCISETSCAN
-#error "No define HCISETSCAN"
-#endif
-
-	if (ioctl(ctl, HCISETSCAN, (unsigned long) &dr) < 0) {
-		fprintf(stderr, "Can't set scan mode on hci%d: %s (%d)\n",
-						hdev, strerror(errno), errno);
-		exit(1);
-	}
-}
 
 int main(int argc, char **argv)
 {
@@ -113,15 +94,15 @@ int main(int argc, char **argv)
 
 	char addr[19] = { 0 };
 	char name[248] = { 0 };
-	bdaddr_t leadd_0 = {{0x00, 0x19, 0x0e, 0x15, 0x57, 0x23}};
+/*	bdaddr_t leadd_0 = {{0x00, 0x19, 0x0e, 0x15, 0x57, 0x23}};
 	bdaddr_t leadd_1 = {{0xe0, 0x2a, 0x82, 0xc7, 0xa1, 0xd9}};
 
 	char * hci_0 = "00:19:0e:15:57:23";
 	char * hci_1 = "e0:2a:82:c7:a1:d9";
 
-	num_hci = hci_count();
+*/	num_hci = hci_count();
 
-//	dev_id = hci_get_route(NULL);
+/*//	dev_id = hci_get_route(NULL);
 	dev_id = hci_get_route(&leadd_1);
 
 	printf("device id : %d\n", dev_id);
@@ -137,7 +118,7 @@ int main(int argc, char **argv)
 	ba2str(&leadd_0, name);
 
 	printf("hci_0 address : %s\n", name);
-
+*/
 	printf("Adaptor number : %d\n", num_hci);
 
 	if (num_hci <= 0) {
@@ -150,6 +131,8 @@ int main(int argc, char **argv)
 		sock = hci_open_dev(dev_id);
 
 		cmd_scan(sock, dev_id, "piscan");
+
+		hci_info(sock, dev_id);
 
 	    len  = 8;
 	    max_rsp = 255;

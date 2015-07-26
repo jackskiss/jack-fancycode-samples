@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
-#include <bludeooth/hci_lib.h>
+#include <bluetooth/hci_lib.h>
 
 static void cmd_scan(int ctl, int hdev, char *opt)
 {
@@ -87,7 +88,7 @@ void set_name(int ctrl, int hdev, char *opt)
 	cmd_name(ctrl, hdev, opt);
 }
 
-void get_name(int ctrl, int hdev, char *opt);
+void get_name(int ctrl, int hdev, char *opt)
 {
 	cmd_name(ctrl, hdev, opt);
 }
